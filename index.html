@@ -193,32 +193,14 @@
                 padding: 8px;
                 font-size: 14px;
             }
-
+            
             .mobile-controls {
                 display: flex !important;
             }
         }
-        /* Add DNS button styles */
-        .dns-button {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 10px 20px;
-            background-color: #4a4a4a;
-            border: 2px solid #fff;
-            color: #fff;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            z-index: 1000;
-        }
-
-        .dns-button:hover {
-            background-color: #666;
-        }
     </style>
 </head>
 <body>
-    <button id="dnsButton" class="dns-button">Show DNS IP</button>
     <div class="game-container">
         <canvas id="gameCanvas"></canvas>
         <div class="ui-overlay">
@@ -242,23 +224,6 @@
             <p>Controls: A/D to move, SPACE to jump, ENTER to cut trees</p>
         </div>
     </div>
-
-    <!-- Load DNS functionality first -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const dnsButton = document.getElementById('dnsButton');
-
-            dnsButton.addEventListener('click', async () => {
-                try {
-                    const response = await fetch('https://api.ipify.org?format=json');
-                    const data = await response.json();
-                    alert(`Current IP Address: ${data.ip}`);
-                } catch (error) {
-                    alert('Could not fetch IP address');
-                }
-            });
-        });
-    </script>
 
     <!-- Load game scripts from jsDelivr CDN -->
     <script src="https://cdn.jsdelivr.net/gh/acool1036/retro-lumberjack@main/static/js/player.js"></script>
