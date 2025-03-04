@@ -12,170 +12,133 @@ class Player {
         this.isJumping = false;
         this.isCutting = false;
         this.cutProgress = 0;
-        this.cutDirection = 1;
+        this.cutDirection = 1; // 1 for increasing, -1 for decreasing
         this.facingRight = true;
-        this.money = 0;
-        this.treesCut = 0;
-        this.upgrades = {};
-        this.cuttingTarget = null;
-        this.axeAngle = 0; // For axe swing animation
-        this.axeSwingSpeed = 10; // Degrees per frame
-        this.animationFrame = 0; // For character animation
+        this.money = 0; // Added money property
+        this.treesCut = 0; // Added trees cut property
+        this.upgrades = {}; // Added upgrades property
+        this.cuttingTarget = null; // Added cuttingTarget property
+        // Using game's skill level instead of having a separate one
     }
 
     update() {
-        // Gravity and basic movement remain unchanged
+        // Gravity
         this.velocityY += this.gravity;
         this.y += this.velocityY;
 
-        if (this.y > this.game.canvas.height - this.height) {
-            this.y = this.game.canvas.height - this.height;
-            this.velocityY = 0;
-            this.isJumping = false;
+        // Ground collision (depends on the world)
+        if (this.game.currentWorld === 'sun') {
+            // For Sun world, we handle platform collisions in the game's update method
+            // But still need ground collision
+            if (this.y > this.game.canvas.height - this.height) {
+                this.y = this.game.canvas.height - this.height;
+                this.velocityY = 0;
+                this.isJumping = false;
+            }
+        } else {
+            // Normal ground collision for other worlds
+            if (this.y > this.game.canvas.height - this.height) {
+                this.y = this.game.canvas.height - this.height;
+                this.velocityY = 0;
+                this.isJumping = false;
+            }
         }
 
+        // Movement
         if (this.game.keys.a && this.x > 0) {
             this.x -= this.speed;
             this.facingRight = false;
-            this.animationFrame = (this.animationFrame + 1) % 30; // Walking animation
         }
         if (this.game.keys.d && this.x < this.game.canvas.width - this.width) {
             this.x += this.speed;
             this.facingRight = true;
-            this.animationFrame = (this.animationFrame + 1) % 30; // Walking animation
         }
 
-        // Cutting animation
+        // Cutting progress - automatic movement
         if (this.isCutting) {
             this.cutProgress += this.cutDirection * 2;
             if (this.cutProgress >= 100 || this.cutProgress <= 0) {
                 this.cutDirection *= -1;
             }
-            // Update axe swing animation
-            this.axeAngle += this.axeSwingSpeed * (this.facingRight ? 1 : -1);
-            if (Math.abs(this.axeAngle) > 45) {
-                this.axeSwingSpeed *= -1;
+        }
+    }
+
+    jump() {
+        if (!this.isJumping) {
+            // Higher jump in Sun world for parkour
+            if (this.game.currentWorld === 'sun') {
+                this.velocityY = -12;
+            } else {
+                this.velocityY = this.jumpForce;
             }
-        } else {
-            this.axeAngle = 0;
-            this.axeSwingSpeed = Math.abs(this.axeSwingSpeed);
+            this.isJumping = true;
+        }
+    }
+
+    attemptCut() {
+        if (this.isCutting) {
+            // Check if cut attempt is within the sweet spot (35-65%)
+            if (this.cutProgress >= 35 && this.cutProgress <= 65) {
+                this.isCutting = false;
+                this.cutProgress = 0;
+                this.cutDirection = 1;
+                if (this.cuttingTarget === 'tree') {
+                    this.treesCut++;
+                    this.addMoney(Math.round(this.treesCut * 1.4)); // Money multiplier change
+                } else if (this.cuttingTarget === 'boss') {
+                    // Boss defeated logic here
+                    this.game.bossDefeated = true;
+                }
+                return true; // Successful cut
+            } else {
+                this.isCutting = false;
+                this.cutProgress = 0;
+                this.cutDirection = 1;
+                return false; // Failed cut
+            }
+        }
+        return false;
+    }
+    addMoney(amount){
+        this.money += amount;
+    }
+    buyUpgrade(upgrade){
+        if(this.money >= upgrade.cost){
+            this.money -= upgrade.cost;
+            this.upgrades[upgrade.name] = true;
         }
     }
 
     draw(ctx) {
-        // Draw legs with walking animation
-        const legOffset = Math.sin(this.animationFrame * 0.2) * 4;
+        // Draw pixel character body
         ctx.fillStyle = '#8B4513';
-        ctx.fillRect(this.x + 8, this.y + 40 + legOffset, 7, 8); // Left leg (fixed width)
-        ctx.fillRect(this.x + 18, this.y + 40 - legOffset, 6, 8); // Right leg
+        ctx.fillRect(this.x + 8, this.y + 8, 16, 32); // Body
 
-        // Draw shoes
-        ctx.fillStyle = '#4A3728'; // Dark brown for shoes
-        ctx.fillRect(this.x + 6, this.y + 46 + legOffset, 9, 4); // Left shoe
-        ctx.fillRect(this.x + 16, this.y + 46 - legOffset, 9, 4); // Right shoe
+        // Draw feet
+        ctx.fillStyle = '#000';
+        ctx.fillRect(this.x + 8, this.y + 40, 8, 4); // Left foot
+        ctx.fillRect(this.x + 16, this.y + 40, 8, 4); // Right foot
 
-        // Add shoe details
-        ctx.fillStyle = '#2C1810'; // Darker brown for shoe details
-        ctx.fillRect(this.x + 6, this.y + 48 + legOffset, 9, 2); // Left shoe sole
-        ctx.fillRect(this.x + 16, this.y + 48 - legOffset, 9, 2); // Right shoe sole
+        // Draw head
+        ctx.fillStyle = '#FFA07A';
+        ctx.fillRect(this.x + 10, this.y, 12, 8); // Head
 
-        // Draw detailed body
-        ctx.fillStyle = '#A0522D';
-        ctx.fillRect(this.x + 8, this.y + 12, 16, 28); // Torso
-
-        // Draw plaid shirt pattern
-        ctx.fillStyle = '#8B0000';
-        for (let i = 0; i < 3; i++) {
-            ctx.fillRect(this.x + 8 + (i * 6), this.y + 12, 2, 28); // Vertical stripes
-            ctx.fillRect(this.x + 8, this.y + 12 + (i * 8), 16, 2); // Horizontal stripes
-        }
-
-        // Draw arms
-        ctx.fillStyle = '#A0522D';
-        if (this.isCutting) {
-            // Animate arms during cutting
-            const armAngle = Math.sin(this.cutProgress * 0.1) * 0.5;
-            ctx.save();
-            ctx.translate(this.x + 16, this.y + 16);
-            ctx.rotate(armAngle);
-            ctx.fillRect(-4, -4, 8, 20); // Arms positioned for cutting
-            ctx.restore();
-        } else {
-            ctx.fillRect(this.x + 4, this.y + 16, 8, 16); // Left arm
-            ctx.fillRect(this.x + 20, this.y + 16, 8, 16); // Right arm
-        }
-
-        // Draw detailed head with face
-        ctx.fillStyle = '#DEB887'; // Face color
-        ctx.fillRect(this.x + 8, this.y, 16, 12); // Head
-
-        // Draw eyes and mouth
-        ctx.fillStyle = '#000000';
+        // Draw bigger axe
         if (this.facingRight) {
-            ctx.fillRect(this.x + 16, this.y + 4, 2, 2); // Right eye
-            ctx.fillRect(this.x + 19, this.y + 4, 2, 2); // Left eye
-            ctx.fillRect(this.x + 16, this.y + 8, 4, 1); // Mouth
-        } else {
-            ctx.fillRect(this.x + 11, this.y + 4, 2, 2); // Right eye
-            ctx.fillRect(this.x + 14, this.y + 4, 2, 2); // Left eye
-            ctx.fillRect(this.x + 12, this.y + 8, 4, 1); // Mouth
-        }
-
-        // Draw beard
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(this.x + 8, this.y + 8, 16, 4); // Beard
-
-        // Draw detailed axe with swing animation
-        if (this.facingRight) {
-            ctx.save();
-            ctx.translate(this.x + 28, this.y + 20);
-            ctx.rotate((this.isCutting ? this.axeAngle : 30) * Math.PI / 180);
-
-            // Draw handle
-            ctx.fillStyle = '#8B4513';
-            ctx.fillRect(-2, -2, 16, 4);
-
-            // Draw blade
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(this.x + 24, this.y + 16, 12, 6); // Handle
             ctx.fillStyle = '#C0C0C0';
-            ctx.beginPath();
-            ctx.moveTo(14, -8);
-            ctx.lineTo(14, 8);
-            ctx.lineTo(6, 0);
-            ctx.closePath();
-            ctx.fill();
-
-            // Draw blade detail
-            ctx.fillStyle = '#808080';
-            ctx.fillRect(13, -6, 2, 12);
-
-            ctx.restore();
+            ctx.fillRect(this.x + 32, this.y + 10, 12, 12); // Blade
         } else {
-            ctx.save();
-            ctx.translate(this.x + 4, this.y + 20);
-            ctx.rotate((this.isCutting ? -this.axeAngle : -30) * Math.PI / 180);
-
-            // Draw handle
-            ctx.fillStyle = '#8B4513';
-            ctx.fillRect(-14, -2, 16, 4);
-
-            // Draw blade
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(this.x - 4, this.y + 16, 12, 6); // Handle
             ctx.fillStyle = '#C0C0C0';
-            ctx.beginPath();
-            ctx.moveTo(-14, -8);
-            ctx.lineTo(-14, 8);
-            ctx.lineTo(-6, 0);
-            ctx.closePath();
-            ctx.fill();
-
-            // Draw blade detail
-            ctx.fillStyle = '#808080';
-            ctx.fillRect(-15, -6, 2, 12);
-
-            ctx.restore();
+            ctx.fillRect(this.x - 12, this.y + 10, 12, 12); // Blade
         }
 
         // Draw cutting progress bar when active
         if (this.isCutting) {
+            // Skill-level based bar width
             const skillBonus = this.game.skillLevel * 0.5;
             const barWidth = 60 + skillBonus;
 
@@ -183,7 +146,7 @@ class Player {
             ctx.fillStyle = '#000';
             ctx.fillRect(this.x - 10, this.y - 20, barWidth, 10);
 
-            // Sweet spot indicator
+            // Sweet spot indicator (35-65%)
             ctx.fillStyle = '#FF0';
             const sweetSpotWidth = barWidth * 0.3;
             ctx.fillRect(this.x - 10 + (barWidth * 0.35), this.y - 20, sweetSpotWidth, 10);
@@ -191,46 +154,6 @@ class Player {
             // Moving indicator
             ctx.fillStyle = '#F00';
             ctx.fillRect(this.x - 10 + (barWidth * this.cutProgress / 100), this.y - 20, 2, 10);
-        }
-    }
-
-    jump() {
-        if (!this.isJumping) {
-            this.velocityY = this.jumpForce;
-            this.isJumping = true;
-        }
-    }
-
-    attemptCut() {
-        if (this.isCutting) {
-            if (this.cutProgress >= 35 && this.cutProgress <= 65) {
-                this.isCutting = false;
-                this.cutProgress = 0;
-                this.cutDirection = 1;
-                if (this.cuttingTarget === 'tree') {
-                    this.treesCut++;
-                    this.addMoney(Math.round(this.treesCut * 1.4));
-                } else if (this.cuttingTarget === 'boss') {
-                    this.game.bossDefeated = true;
-                }
-                return true;
-            } else {
-                this.isCutting = false;
-                this.cutProgress = 0;
-                this.cutDirection = 1;
-                return false;
-            }
-        }
-        return false;
-    }
-
-    addMoney(amount) {
-        this.money += amount;
-    }
-    buyUpgrade(upgrade){
-        if(this.money >= upgrade.cost){
-            this.money -= upgrade.cost;
-            this.upgrades[upgrade.name] = true;
         }
     }
 }
