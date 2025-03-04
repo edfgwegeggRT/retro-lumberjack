@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro Lumberjack</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/acool1036/retro-lumberjack@main/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div class="ui-overlay">
+            <div class="stats">
+                <div id="money">Money: $<span id="moneyAmount">0</span></div>
+                <div id="moneyPerSecond">Money/sec: $<span id="moneyPerSecondAmount">0</span></div>
+                <div id="world">World: Earth</div>
+            </div>
+            <div class="codes-section">
+                <input type="text" id="codeInput" placeholder="Enter code">
+                <button id="redeemCode">Redeem</button>
+            </div>
+            <div class="shop">
+                <h2>Shop</h2>
+                <button id="skillUpgrade">Upgrade Skill ($10)</button>
+                <button id="moneyUpgrade">Upgrade Money Multiplier ($20)</button>
+                <button id="moonRocket">Buy Rocket to Moon ($10000)</button>
+            </div>
+        </div>
+        <div class="controls">
+            <p>Controls: A/D to move, SPACE to jump, ENTER to cut trees</p>
+        </div>
+    </div>
+
+    <!-- Load game scripts from jsDelivr CDN -->
+    <script src="https://cdn.jsdelivr.net/gh/acool1036/retro-lumberjack@main/static/js/player.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/acool1036/retro-lumberjack@main/static/js/tree.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/acool1036/retro-lumberjack@main/static/js/shop.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/acool1036/retro-lumberjack@main/static/js/game.js"></script>
+</body>
+</html>
