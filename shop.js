@@ -25,7 +25,7 @@ class Shop {
         // Calculate upgrade costs based on current levels
         if (this.skillUpgradeCount > 0) {
             for (let i = 0; i < this.skillUpgradeCount; i++) {
-                this.skillUpgradeCost = Math.floor(this.skillUpgradeCost * 1.3);
+                this.skillUpgradeCost = Math.floor(this.skillUpgradeCost * 1.1);
             }
         }
 
